@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurboPi Control Panel</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px; background: #eceff1; color: #37474f; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: inline-block; min-width: 300px; }
+        h1 { color: #0078d4; }
+        button { font-size: 16px; padding: 12px 24px; margin: 10px; cursor: pointer; border: none; border-radius: 8px; transition: 0.3s; font-weight: bold; }
+        .start { background-color: #28a745; color: white; }
+        .start:hover { background-color: #218838; }
+        .stop { background-color: #dc3545; color: white; }
+        .stop:hover { background-color: #c82333; }
+        .reset { background-color: #6c757d; color: white; font-size: 12px; margin-top: 20px; }
+        #status { margin-top: 25px; padding: 10px; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>TurboPi Control Center</h1>
+    
+    <div class="card">
+        <h3>Modul Steuerung</h3>
+        <p>Status: <span id="status-text">Warte auf Eingabe...</span></p>
+        
+        <button class="start" onclick="sendAction('start')">START Modul</button>
+        <button class="stop" onclick="sendAction('stop')">STOP Modul</button>
+        
+        <br>
+        <button class="reset" onclick="resetKey()">Key zurücksetzen</button>
+    </div>
+
+    <script>
+        const BASE_URL = "https://iot-master-func-f4heg0cggmajh2f9.germanywestcentral-01.azurewebsites.net/api/managecontainer";
+        const DEVICE_ID = "TurboPi"; // Hier DEINE Device ID eintragen
+        const MODULE_ID = "telemetry"; // Hier DEINEN Modulnamen eintragen
+
+        // Holt den Key aus dem Browser-Speicher oder fragt den User
+        function getApiKey() {
+            let key = localStorage.getItem('azure_func_key');
+            if (!key) {
+                key = prompt("Bitte gib deinen Azure Function Key ein (wird sicher im Browser gespeichert):");
+                if (key) {
+                    localStorage.setItem('azure_func_key', key);
+                }
+            }
+            return key;
+        }
+
+        async function sendAction(action) {
+            const statusText = document.getElementById('status-text');
+            const key = getApiKey();
+            
+            if (!key) {
+                alert("Kein Key vorhanden. Aktion abgebrochen.");
+                return;
+            }
+
+            statusText.innerText = `Sende Befehl: ${action}...`;
+            statusText.style.color = "orange";
+
+            try {
+                const response = await fetch(`${BASE_URL}?code=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: DEVICE_ID,
+                        module_id: MODULE_ID,
+                        action: action
+                    })
+                });
+
+                if (response.ok) {
+                    statusText.innerText = `Erfolg: Modul auf '${action}' gesetzt.`;
+                    statusText.style.color = "green";
+                } else {
+                    const errorData = await response.text();
+                    statusText.innerText = "Fehler: " + response.status;
+                    statusText.style.color = "red";
+                    console.error("Azure Error:", errorData);
+                }
+            } catch (err) {
+                statusText.innerText = "Netzwerkfehler!";
+                statusText.style.color = "red";
+                console.error(err);
+            }
+        }
+
+        function resetKey() {
+            localStorage.removeItem('azure_func_key');
+            alert("Key gelöscht. Beim nächsten Befehl wirst du neu gefragt.");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
