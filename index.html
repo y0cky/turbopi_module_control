@@ -4,22 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TurboPi IoT Control Center</title>
+
     <style>
         :root {
             --primary: #0078d4;
             --success: #28a745;
             --danger: #dc3545;
             --bg: #f0f2f5;
-            --active: #ffc107;
         }
 
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .header {
@@ -42,58 +42,53 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
         }
 
-        h2 { margin-top: 0; color: #333; }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
 
-        .controls { display: flex; gap: 15px; justify-content: center; margin-top: 15px; }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .controls strong {
+            flex: 1;
+            text-transform: uppercase;
+        }
 
         button {
-            padding: 12px 25px;
+            padding: 10px 22px;
             border: none;
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
             color: white;
+            transition: transform 0.1s, opacity 0.2s;
         }
 
-        button:active { transform: scale(0.95); }
-        .btn-start { background: var(--success); }
-        .btn-stop { background: var(--danger); }
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-start {
+            background: var(--success);
+        }
+
+        .btn-stop {
+            background: var(--danger);
+        }
 
         #status-indicator {
-            margin-top: 15px;
-            font-size: 0.9rem;
+            margin-top: 20px;
+            font-size: 0.95rem;
             color: #666;
-        }
-
-        input[type=range] {
-            width: 100%;
-            margin-top: 15px;
-        }
-
-        .module-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-
-        .live-pulse {
-            display: inline-block;
-            width: 10px; height: 10px;
-            background: var(--success);
-            border-radius: 50%;
-            margin-right: 5px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
+            text-align: center;
         }
     </style>
 </head>
@@ -106,74 +101,63 @@
     <div class="container">
         <div class="card">
             <h2>Container Steuerung</h2>
-            <p>Wähle den aktiven Modus für den TurboPi:</p>
+            <p>Starte oder stoppe einzelne Container:</p>
 
-            <!-- Slider für Module -->
-            <input type="range" min="0" max="2" value="0" id="module-slider" oninput="onSliderChange(this.value)">
-            <div class="module-labels">
-                <span>Controller</span>
-                <span>Linefollower</span>
-                <span>Autonom</span>
+            <div class="controls">
+                <strong>testcontainer</strong>
+                <button class="btn-start" onclick="controlContainer('testcontainer','start')">Start</button>
+                <button class="btn-stop" onclick="controlContainer('testcontainer','stop')">Stop</button>
             </div>
 
-            <div id="status-indicator">Bereit für Befehle...</div>
+            <div class="controls">
+                <strong>battery</strong>
+                <button class="btn-start" onclick="controlContainer('battery','start')">Start</button>
+                <button class="btn-stop" onclick="controlContainer('battery','stop')">Stop</button>
+            </div>
+
+            <div class="controls">
+                <strong>telemetry</strong>
+                <button class="btn-start" onclick="controlContainer('telemetry','start')">Start</button>
+                <button class="btn-stop" onclick="controlContainer('telemetry','stop')">Stop</button>
+            </div>
+
+            <div id="status-indicator">Bereit für Befehle…</div>
         </div>
     </div>
 
     <script>
-        // Platzhalter API-Key wird durch GitHub Actions ersetzt
+        // Wird per GitHub Actions ersetzt
         const API_KEY = "__API_KEY__";
         const BASE_URL = "https://iot-master-func-f4heg0cggmajh2f9.germanywestcentral-01.azurewebsites.net/api/managecontainer";
-
         const DEVICE_ID = "TurboPi01";
-        const MODULES = ["controller", "linefollower", "autonom"];
 
-        // Basis-Funktion um Modulaktionen zu senden
-        async function sendModuleAction(moduleId, action) {
-            return fetch(`${BASE_URL}?code=${API_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    device_id: DEVICE_ID,
-                    module_id: moduleId,
-                    action: action
-                })
-            });
-        }
-
-        // Aktiviert exakt ein Modul und stoppt alle anderen
-        async function activateModule(targetModule) {
-            const statusDiv = document.getElementById('status-indicator');
-            statusDiv.innerText = `Aktiviere Modul: ${targetModule}...`;
+        async function controlContainer(container, action) {
+            const statusDiv = document.getElementById("status-indicator");
+            statusDiv.innerText = `${action.toUpperCase()} → ${container} …`;
             statusDiv.style.color = "orange";
 
             try {
-                // 1. Alle Module stoppen
-                for (const module of MODULES) {
-                    await sendModuleAction(module, "stop");
-                }
+                await fetch(`${BASE_URL}?code=${API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        device_id: DEVICE_ID,
+                        module_id: container,
+                        action: action
+                    })
+                });
 
-                // 2. Zielmodul starten
-                await sendModuleAction(targetModule, "start");
-
-                statusDiv.innerText = `Aktiv: ${targetModule}`;
+                statusDiv.innerText =
+                    `${container} erfolgreich ${action === "start" ? "gestartet" : "gestoppt"}`;
                 statusDiv.style.color = "green";
-            } catch (err) {
-                statusDiv.innerText = "Fehler beim Umschalten der Module!";
+
+            } catch (error) {
+                statusDiv.innerText = `Fehler bei ${container}`;
                 statusDiv.style.color = "red";
-                console.error(err);
+                console.error(error);
             }
         }
-
-        // Slider Event
-        function onSliderChange(value) {
-            const moduleMap = {
-                0: "controller",
-                1: "linefollower",
-                2: "autonom"
-            };
-            activateModule(moduleMap[value]);
-        }
     </script>
+
 </body>
 </html>
