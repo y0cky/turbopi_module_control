@@ -105,20 +105,20 @@
 
             <div class="controls">
                 <strong>testcontainer</strong>
-                <button class="btn-start" onclick="controlContainer('testcontainer','start')">Start</button>
-                <button class="btn-stop" onclick="controlContainer('testcontainer','stop')">Stop</button>
+                <button class="btn-start" onclick="controlContainer('testcontainer','running')">Running</button>
+                <button class="btn-stop" onclick="controlContainer('testcontainer','stopped')">Stopped</button>
             </div>
 
             <div class="controls">
                 <strong>battery</strong>
-                <button class="btn-start" onclick="controlContainer('battery','start')">Start</button>
-                <button class="btn-stop" onclick="controlContainer('battery','stop')">Stop</button>
+                <button class="btn-start" onclick="controlContainer('battery','running')">Running</button>
+                <button class="btn-stop" onclick="controlContainer('battery','stopped')">Stopped</button>
             </div>
 
             <div class="controls">
                 <strong>telemetry</strong>
-                <button class="btn-start" onclick="controlContainer('telemetry','start')">Start</button>
-                <button class="btn-stop" onclick="controlContainer('telemetry','stop')">Stop</button>
+                <button class="btn-start" onclick="controlContainer('telemetry','running')">Running</button>
+                <button class="btn-stop" onclick="controlContainer('telemetry','stopped')">Stopped</button>
             </div>
 
             <div id="status-indicator">Bereit für Befehle…</div>
@@ -150,7 +150,7 @@
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
 
-                statusDiv.innerText = `${container} erfolgreich ${action === "start" ? "gestartet" : "gestoppt"}`;
+                statusDiv.innerText = `${container} erfolgreich ${action === "running" ? "gestartet" : "gestoppt"}`;
                 statusDiv.style.color = "green";
 
             } catch (error) {
